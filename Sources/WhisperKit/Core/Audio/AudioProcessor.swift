@@ -791,8 +791,8 @@ open class AudioProcessor: NSObject, AudioProcessing {
         }
     }
 
-    #if os(macOS)
     public static func getAudioDevices() -> [AudioDevice] {
+        #if os(macOS)
         var devices = [AudioDevice]()
 
         var propertySize: UInt32 = 0
@@ -869,15 +869,31 @@ open class AudioProcessor: NSObject, AudioProcessing {
                     }
                 }
             }
+            
+            print("Device name: \(deviceName)")
 
             if inputChannels > 0 {
                 devices.append(AudioDevice(id: deviceID, name: deviceName))
             }
+            
+            return devices
         }
-
+        #else
+        let audioSession = AVAudioSession.sharedInstance()
+        var devices = [AudioDevice]()
+        if let availableInputs = audioSession.availableInputs {
+            for availableInput in availableInputs {
+                let device = AudioDevice(id: availableInput.uid, name: availableInput.portName)
+                if availableInput.channels?.count ?? 0 > 0 {
+                    devices.append(device)
+                }
+            }
+        }
         return devices
+        #endif
+        
+        return [AudioDevice]()
     }
-    #endif
 
     deinit {
         stopRecording()

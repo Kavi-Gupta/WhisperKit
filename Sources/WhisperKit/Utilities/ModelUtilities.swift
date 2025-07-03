@@ -29,6 +29,8 @@ public struct ModelUtilities {
         // Attempt to load tokenizer from local folder if specified
         let resolvedTokenizerFolder = hubApi.localRepoLocation(HubApi.Repo(id: tokenizerName))
         let tokenizerConfigPath = resolvedTokenizerFolder.appendingPathComponent("tokenizer.json")
+        
+        Logging.debug("Looking for tokenizer.json at \(tokenizerConfigPath.path)")
 
         // Check if 'tokenizer.json' exists in the folder
         if FileManager.default.fileExists(atPath: tokenizerConfigPath.path) {

@@ -73,20 +73,45 @@ public actor AudioStreamTranscriber {
         self.stateChangeCallback = stateChangeCallback
     }
 
-    public func startStreamTranscription() async throws {
+    public func startStreamTranscription(inputDeviceID: DeviceID? = nil) async throws {
         guard !state.isRecording else { return }
         guard await AudioProcessor.requestRecordPermission() else {
             Logging.error("Microphone access was not granted.")
             return
         }
         state.isRecording = true
-        try audioProcessor.startRecordingLive { [weak self] _ in
+        try audioProcessor.startRecordingLive(inputDeviceID: inputDeviceID) { [weak self] _ in
             Task { [weak self] in
                 await self?.onAudioBufferCallback()
             }
         }
         await realtimeLoop()
         Logging.info("Realtime transcription has started")
+    }
+    
+    public func pauseStreamTranscription() {
+        guard state.isRecording else {
+            Logging.error("Realtime transcription is not recording")
+            return
+        }
+        state.isRecording = false
+        audioProcessor.pauseRecording()
+        Logging.info("Realtime transcription is paused")
+    }
+    
+    public func resumeStreamTranscription(inputDeviceID: DeviceID? = nil, callback: (([Float]) -> Void)? = nil) async throws {
+        guard !state.isRecording else {
+            Logging.error("Realtime transcription is not paused")
+            return
+        }
+        guard await AudioProcessor.requestRecordPermission() else {
+            Logging.error("Microphone access was not granted.")
+            return
+        }
+                
+        try audioProcessor.resumeRecordingLive(inputDeviceID: inputDeviceID, callback: callback)
+        await realtimeLoop()
+        Logging.info("Realtime transcription resumed")
     }
 
     public func stopStreamTranscription() {
